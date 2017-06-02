@@ -19,10 +19,11 @@ package de.codecentric.elasticsearch.plugin.kerberosrealm.realm;
 
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.ElasticsearchSecurityException;
+import org.elasticsearch.common.util.concurrent.ThreadContext;
 import org.elasticsearch.rest.RestRequest;
-import org.elasticsearch.shield.authc.AuthenticationToken;
-import org.elasticsearch.shield.authc.DefaultAuthenticationFailureHandler;
 import org.elasticsearch.transport.TransportMessage;
+import org.elasticsearch.xpack.security.authc.AuthenticationToken;
+import org.elasticsearch.xpack.security.authc.DefaultAuthenticationFailureHandler;
 
 public class KerberosAuthenticationFailureHandler extends DefaultAuthenticationFailureHandler {
 
@@ -40,50 +41,50 @@ public class KerberosAuthenticationFailureHandler extends DefaultAuthenticationF
     }
 
     @Override
-    public ElasticsearchSecurityException unsuccessfulAuthentication(RestRequest request, AuthenticationToken token) {
-        ElasticsearchSecurityException securityException = super.unsuccessfulAuthentication(request, token);
+    public ElasticsearchSecurityException failedAuthentication(RestRequest request, AuthenticationToken token, ThreadContext context) {
+        ElasticsearchSecurityException securityException = super.failedAuthentication(request, token, context);
         securityException.addHeader(WWW_AUTHENTICATE, NEGOTIATE);
         return securityException;
     }
 
     @Override
-    public ElasticsearchSecurityException unsuccessfulAuthentication(TransportMessage message, AuthenticationToken token, String action) {
-        ElasticsearchSecurityException securityException = super.unsuccessfulAuthentication(message, token, action);
+    public ElasticsearchSecurityException failedAuthentication(TransportMessage message, AuthenticationToken token, String action, ThreadContext context) {
+        ElasticsearchSecurityException securityException = super.failedAuthentication(message, token, action, context);
         securityException.addHeader(WWW_AUTHENTICATE, NEGOTIATE);
         return securityException;
     }
 
     @Override
-    public ElasticsearchSecurityException exceptionProcessingRequest(RestRequest request, Exception exception) {
-        ElasticsearchSecurityException securityException = super.exceptionProcessingRequest(request, exception);
+    public ElasticsearchSecurityException missingToken(RestRequest request, ThreadContext context) {
+        ElasticsearchSecurityException securityException = super.missingToken(request, context);
+        securityException.addHeader(WWW_AUTHENTICATE, NEGOTIATE);
+        return securityException;
+    }
+
+    @Override
+    public ElasticsearchSecurityException missingToken(TransportMessage message, String action, ThreadContext context) {
+        ElasticsearchSecurityException securityException = super.missingToken(message, action, context);
+        securityException.addHeader(WWW_AUTHENTICATE, NEGOTIATE);
+        return securityException;
+    }
+
+    @Override
+    public ElasticsearchSecurityException exceptionProcessingRequest(RestRequest request, Exception exception, ThreadContext context) {
+        ElasticsearchSecurityException securityException = super.exceptionProcessingRequest(request, exception, context);
         securityException.addHeader(WWW_AUTHENTICATE, NEGOTIATE + this.getOutTokenFromElasticsearchException(exception));
         return securityException;
     }
 
     @Override
-    public ElasticsearchSecurityException exceptionProcessingRequest(TransportMessage message, Exception exception) {
-        ElasticsearchSecurityException securityException = super.exceptionProcessingRequest(message, exception);
+    public ElasticsearchSecurityException exceptionProcessingRequest(TransportMessage message, String action, Exception exception, ThreadContext context) {
+        ElasticsearchSecurityException securityException = super.exceptionProcessingRequest(message, action, exception, context);
         securityException.addHeader(WWW_AUTHENTICATE, NEGOTIATE + this.getOutTokenFromElasticsearchException(exception));
         return securityException;
     }
 
     @Override
-    public ElasticsearchSecurityException missingToken(RestRequest request) {
-        ElasticsearchSecurityException securityException = super.missingToken(request);
-        securityException.addHeader(WWW_AUTHENTICATE, NEGOTIATE);
-        return securityException;
-    }
-
-    @Override
-    public ElasticsearchSecurityException missingToken(TransportMessage message, String action) {
-        ElasticsearchSecurityException securityException = super.missingToken(message, action);
-        securityException.addHeader(WWW_AUTHENTICATE, NEGOTIATE);
-        return securityException;
-    }
-
-    @Override
-    public ElasticsearchSecurityException authenticationRequired(String action) {
-        ElasticsearchSecurityException securityException = super.authenticationRequired(action);
+    public ElasticsearchSecurityException authenticationRequired(String action, ThreadContext context) {
+        ElasticsearchSecurityException securityException = super.authenticationRequired(action, context);
         securityException.addHeader(WWW_AUTHENTICATE, NEGOTIATE);
         return securityException;
     }

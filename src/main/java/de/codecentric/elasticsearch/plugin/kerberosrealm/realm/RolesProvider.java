@@ -1,8 +1,8 @@
 package de.codecentric.elasticsearch.plugin.kerberosrealm.realm;
 
-import org.elasticsearch.common.logging.ESLogger;
+import org.apache.logging.log4j.Logger;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.shield.authc.RealmConfig;
+import org.elasticsearch.xpack.security.authc.RealmConfig;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -14,7 +14,7 @@ public class RolesProvider {
     private static final String ROLES = "roles";
 
     public RolesProvider(RealmConfig config) {
-        ESLogger logger = config.logger(RolesProvider.class);
+        Logger logger = config.logger(RolesProvider.class);
         Map<String, Settings> roleGroups = config.settings().getGroups(ROLES + ".");
 
         for (String role : roleGroups.keySet()) {

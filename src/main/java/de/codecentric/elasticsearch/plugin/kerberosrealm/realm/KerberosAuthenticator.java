@@ -1,12 +1,13 @@
 package de.codecentric.elasticsearch.plugin.kerberosrealm.realm;
 
 import de.codecentric.elasticsearch.plugin.kerberosrealm.realm.support.LoginUsingKeytab;
+import org.apache.logging.log4j.Logger;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.SpecialPermission;
-import org.elasticsearch.common.logging.ESLogger;
-import org.elasticsearch.shield.authc.RealmConfig;
+import org.elasticsearch.xpack.security.authc.RealmConfig;
 import org.ietf.jgss.*;
+import sun.security.jgss.GSSUtil;
 
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginException;
@@ -17,8 +18,6 @@ import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 
-import static de.codecentric.elasticsearch.plugin.kerberosrealm.realm.support.GSSUtil.GSS_SPNEGO_MECH_OID;
-
 public class KerberosAuthenticator {
 
     private static final String ACCEPTOR_KEYTAB_PATH = "files.acceptor_keytab";
@@ -26,7 +25,7 @@ public class KerberosAuthenticator {
 
     private final String acceptorPrincipal;
     private final Path acceptorKeyTabPath;
-    private final ESLogger logger;
+    private final Logger logger;
 
     public KerberosAuthenticator(RealmConfig config) {
         logger = config.logger(RolesProvider.class);
@@ -46,24 +45,6 @@ public class KerberosAuthenticator {
         if (!Files.isReadable(acceptorKeyTabPath) || Files.isDirectory(acceptorKeyTabPath)) {
             throw new ElasticsearchException("File not found or not readable: {}", acceptorKeyTabPath.toAbsolutePath());
         }
-    }
-
-    //borrowed from Apache Tomcat 8 http://svn.apache.org/repos/asf/tomcat/tc8.0.x/trunk/
-    private static String getUsernameFromGSSContext(final GSSContext gssContext, final ESLogger logger) {
-        if (gssContext.isEstablished()) {
-            GSSName gssName = null;
-            try {
-                gssName = gssContext.getSrcName();
-            } catch (final GSSException e) {
-                logger.error("Unable to get src name from gss context", e);
-            }
-
-            if (gssName != null) {
-                return gssName.toString();
-            }
-        }
-
-        return null;
     }
 
     private Subject loginUsingKeytab() {
@@ -111,10 +92,10 @@ public class KerberosAuthenticator {
                 final Throwable cause = e.getCause();
                 if (cause instanceof GSSException) {
                     logger.warn("Service login not successful due to {}", e, e.toString());
-                } else {
-                    logger.error("Service login not successful due to {}", e, e.toString());
+                    throw ExceptionsHelper.convertToRuntime((GSSException) cause);
                 }
-                throw ExceptionsHelper.convertToRuntime(cause);
+                logger.error("Service login not successful due to {}", e, e.toString());
+                throw ExceptionsHelper.convertToRuntime(e);
             } finally {
                 if (gssContext != null) {
                     try {
@@ -146,7 +127,7 @@ public class KerberosAuthenticator {
                 return Subject.doAs(subject, new PrivilegedExceptionAction<GSSCredential>() {
                     @Override
                     public GSSCredential run() throws GSSException {
-                        return manager.createCredential(null, GSSCredential.DEFAULT_LIFETIME, GSS_SPNEGO_MECH_OID, GSSCredential.ACCEPT_ONLY);
+                        return manager.createCredential(null, GSSCredential.DEFAULT_LIFETIME, GSSUtil.GSS_SPNEGO_MECH_OID, GSSCredential.ACCEPT_ONLY);
                     }
                 });
             } catch (PrivilegedActionException e) {
@@ -186,13 +167,31 @@ public class KerberosAuthenticator {
     }
 
     //borrowed from Apache Tomcat 8 http://svn.apache.org/repos/asf/tomcat/tc8.0.x/trunk/
+    private static String getUsernameFromGSSContext(final GSSContext gssContext, final Logger logger) {
+        if (gssContext.isEstablished()) {
+            GSSName gssName = null;
+            try {
+                gssName = gssContext.getSrcName();
+            } catch (final GSSException e) {
+                logger.error("Unable to get src name from gss context", e);
+            }
+
+            if (gssName != null) {
+                return gssName.toString();
+            }
+        }
+
+        return null;
+    }
+
+    //borrowed from Apache Tomcat 8 http://svn.apache.org/repos/asf/tomcat/tc8.0.x/trunk/
     private static class AuthenticateAction implements PrivilegedAction<String> {
 
         private final Subject subject;
-        private final ESLogger logger;
+        private final Logger logger;
         private final GSSContext gssContext;
 
-        private AuthenticateAction(Subject subject, ESLogger logger, GSSContext gssContext) {
+        private AuthenticateAction(Subject subject, Logger logger, GSSContext gssContext) {
             this.subject = subject;
             this.logger = logger;
             this.gssContext = gssContext;

@@ -20,22 +20,16 @@ package de.codecentric.elasticsearch.plugin.kerberosrealm;
 import de.codecentric.elasticsearch.plugin.kerberosrealm.realm.KerberosAuthenticationFailureHandler;
 import de.codecentric.elasticsearch.plugin.kerberosrealm.realm.KerberosRealm;
 import de.codecentric.elasticsearch.plugin.kerberosrealm.realm.KerberosRealmFactory;
-import org.elasticsearch.common.logging.ESLogger;
-import org.elasticsearch.common.logging.Loggers;
-import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.plugins.Plugin;
-import org.elasticsearch.shield.authc.AuthenticationModule;
+import org.elasticsearch.common.collect.MapBuilder;
+import org.elasticsearch.xpack.extensions.XPackExtension;
+import org.elasticsearch.xpack.security.authc.AuthenticationFailureHandler;
+import org.elasticsearch.xpack.security.authc.Realm.Factory;
 
-public class KerberosRealmPlugin extends Plugin {
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Map;
 
-    private static final String CLIENT_TYPE = "client.type";
-    private final ESLogger logger = Loggers.getLogger(this.getClass());
-    private final boolean client;
-
-    public KerberosRealmPlugin(Settings settings) {
-        client = !"node".equals(settings.get(CLIENT_TYPE, "node"));
-        logger.info("Start Kerberos Realm Plugin (mode: {})", settings.get(CLIENT_TYPE));
-    }
+public class KerberosRealmExtension extends XPackExtension {
 
     @Override
     public String name() {
@@ -47,12 +41,20 @@ public class KerberosRealmPlugin extends Plugin {
         return "Kerberos/SPNEGO Realm";
     }
 
-    public void onModule(AuthenticationModule authenticationModule) {
-        if (!client) {
-            authenticationModule.addCustomRealm(KerberosRealm.TYPE, KerberosRealmFactory.class);
-            authenticationModule.setAuthenticationFailureHandler(KerberosAuthenticationFailureHandler.class);
-        } else {
-            logger.warn("This plugin is not necessary for client nodes");
-        }
+    @Override
+    public Collection<String> getRestHeaders() {
+        return Arrays.asList(KerberosRealm.AUTHORIZATION_HEADER, KerberosRealm.WWW_AUTHENTICATE_HEADER);
+    }
+
+    @Override
+    public Map<String, Factory> getRealms() {
+        return new MapBuilder<String, Factory>()
+                .put(KerberosRealm.TYPE, new KerberosRealmFactory())
+                .immutableMap();
+    }
+
+    @Override
+    public AuthenticationFailureHandler getAuthenticationFailureHandler() {
+        return new KerberosAuthenticationFailureHandler();
     }
 }

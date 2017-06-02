@@ -7,12 +7,12 @@
     <includeBaseDirectory>false</includeBaseDirectory>
     <files>
         <file>
-            <source>${project.basedir}/src/main/resources/plugin-descriptor.properties</source>
+            <source>${project.basedir}/src/main/resources/x-pack-extension-descriptor.properties</source>
             <outputDirectory></outputDirectory>
             <filtered>true</filtered>
         </file>
         <file>
-            <source>${project.basedir}/src/main/resources/plugin-security.policy</source>
+            <source>${project.basedir}/src/main/resources/x-pack-extension-security.policy</source>
             <outputDirectory></outputDirectory>
             <filtered>true</filtered>
         </file>

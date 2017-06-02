@@ -1,10 +1,13 @@
+cluster.name: "docker-cluster"
 network.host: 0.0.0.0
 
-shield.authc.realms.kerberos:
+discovery.zen.minimum_master_nodes: 1
+
+xpack.security.authc.realms.kerberos:
   type: kerberos
   order: 0
   acceptor_principal: HTTP/localhost@LOCALHOST
   files:
     acceptor_keytab: kerberos/krb5.keytab
     krb5_conf: kerberos/krb5.conf
-  roles.admin.0: user@LOCALHOST
+  roles.superuser.0: user@LOCALHOST

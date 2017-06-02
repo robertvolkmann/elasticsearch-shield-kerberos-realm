@@ -1,22 +1,16 @@
 package de.codecentric.elasticsearch.plugin.kerberosrealm.realm;
 
-import org.elasticsearch.action.admin.cluster.health.ClusterHealthRequest;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.util.concurrent.ThreadContext;
 import org.elasticsearch.env.Environment;
-import org.elasticsearch.rest.RestRequest;
-import org.elasticsearch.shield.InternalSystemUser;
-import org.elasticsearch.shield.User;
-import org.elasticsearch.shield.authc.RealmConfig;
-import org.elasticsearch.shield.authc.support.UsernamePasswordToken;
-import org.elasticsearch.test.rest.FakeRestRequest;
-import org.elasticsearch.transport.TransportMessage;
-import org.hamcrest.Matchers;
+import org.elasticsearch.xpack.security.authc.RealmConfig;
+import org.elasticsearch.xpack.security.authc.support.UsernamePasswordToken;
+import org.elasticsearch.xpack.security.user.User;
 import org.junit.Before;
 import org.junit.Test;
 
 import javax.xml.bind.DatatypeConverter;
 import java.io.IOException;
-import java.util.HashMap;
 
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertArrayEquals;
@@ -54,11 +48,6 @@ public class KerberosRealmTest {
     }
 
     @Test
-    public void should_authenticate_liveness_token_as_interal_system_user() {
-        assertThat(kerberosRealm.authenticate(LivenessToken.INSTANCE), Matchers.<User>is(InternalSystemUser.INSTANCE));
-    }
-
-    @Test
     public void should_not_authenticate_invalid_kerberos_tokens() {
         KerberosToken token = new KerberosToken(new byte[0]);
         when(mockedAuthenticator.authenticate(token)).thenReturn(null);
@@ -67,25 +56,12 @@ public class KerberosRealmTest {
     }
 
     @Test
-    public void should_return_a_token_when_rest_request_has_valid_authorization_header() throws IOException {
+    public void should_return_a_token_when_request_has_valid_authorization_header() throws IOException {
         byte[] expectedToken = new byte[]{1, 2, 3};
-        HashMap<String, String> headers = new HashMap<>();
-        headers.put("Authorization", "Negotiate " + DatatypeConverter.printBase64Binary(expectedToken));
-        RestRequest request = new FakeRestRequest(headers, new HashMap<String, String>());
+        ThreadContext context = new ThreadContext(Settings.EMPTY);
+        context.putHeader("Authorization", "Negotiate " + DatatypeConverter.printBase64Binary(expectedToken));
 
-        KerberosToken token = kerberosRealm.token(request);
-
-        assertThat(token, is(notNullValue()));
-        assertArrayEquals(token.credentials(), expectedToken);
-    }
-
-    @Test
-    public void should_return_a_token_when_transport_message_has_valid_authorization_header() throws IOException {
-        byte[] expectedToken = new byte[]{1, 2, 3};
-        TransportMessage message = new ClusterHealthRequest();
-        message.putHeader("Authorization", "Negotiate " + DatatypeConverter.printBase64Binary(expectedToken));
-
-        KerberosToken token = kerberosRealm.token(message);
+        KerberosToken token = kerberosRealm.token(context);
 
         assertThat(token, is(notNullValue()));
         assertArrayEquals(token.credentials(), expectedToken);

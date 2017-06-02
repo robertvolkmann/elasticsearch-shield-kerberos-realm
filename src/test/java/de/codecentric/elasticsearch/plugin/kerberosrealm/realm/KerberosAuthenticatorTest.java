@@ -2,7 +2,7 @@ package de.codecentric.elasticsearch.plugin.kerberosrealm.realm;
 
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.shield.authc.RealmConfig;
+import org.elasticsearch.xpack.security.authc.RealmConfig;
 import org.ietf.jgss.GSSException;
 import org.junit.After;
 import org.junit.Before;

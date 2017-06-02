@@ -4,19 +4,20 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>de.codecentric.elasticsearch.plugin.kerberosrealm</groupId>
-    <artifactId>elasticsearch-shield-kerberos-realm</artifactId>
-    <version>2.4.4</version>
-    <name>Shield Kerberos V5 Realm</name>
-    <description>Shield Kerberos V5 Realm by codecentric AG</description>
+    <artifactId>x-pack-kerberos-realm</artifactId>
+    <version>5.0.2</version>
+    <name>X-Pack Kerberos Realm</name>
+    <description>X-Pack Kerberos/SPNEGO Realm</description>
 
     <properties>
-        <elasticsearch.version>2.4.4</elasticsearch.version>
+        <elasticsearch.version>5.0.2</elasticsearch.version>
+        <java.version>1.8</java.version>
     </properties>
 
     <repositories>
         <repository>
             <id>elasticsearch-releases</id>
-            <url>http://maven.elasticsearch.org/releases</url>
+            <url>https://artifacts.elastic.co/maven</url>
             <releases>
                 <enabled>true</enabled>
                 <updatePolicy>daily</updatePolicy>
@@ -36,24 +37,42 @@
         </dependency>
         <dependency>
             <groupId>org.elasticsearch.plugin</groupId>
-            <artifactId>shield</artifactId>
+            <artifactId>x-pack-api</artifactId>
             <version>${elasticsearch.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>log4j</groupId>
-            <artifactId>log4j</artifactId>
-            <version>1.2.17</version>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-api</artifactId>
+            <version>2.6.2</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+            <version>2.6.2</version>
             <scope>provided</scope>
         </dependency>
 
         <dependency>
-            <groupId>org.elasticsearch</groupId>
-            <artifactId>elasticsearch</artifactId>
+            <groupId>org.elasticsearch.test</groupId>
+            <artifactId>framework</artifactId>
             <version>${elasticsearch.version}</version>
             <scope>test</scope>
-            <type>test-jar</type>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.carrotsearch.randomizedtesting</groupId>
+                    <artifactId>randomizedtesting-runner</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
+        <dependency>
+            <groupId>org.elasticsearch.client</groupId>
+            <artifactId>x-pack-transport</artifactId>
+            <version>${elasticsearch.version}</version>
+            <scope>test</scope>
+        </dependency>
+
         <dependency>
             <groupId>org.hamcrest</groupId>
             <artifactId>hamcrest-all</artifactId>
@@ -118,8 +137,8 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.3</version>
                 <configuration>
-                    <source>1.7</source>
-                    <target>1.7</target>
+                    <source>1.8</source>
+                    <target>1.8</target>
                 </configuration>
             </plugin>
             <plugin>
@@ -166,18 +185,14 @@
                             </run>
                         </image>
                         <image>
-                            <name>elasticsearch:2.4.4-kerberos</name>
+                            <name>elasticsearch:5.0.2-kerberos</name>
                             <build>
-                                <from>elasticsearch:2.4.4-alpine</from>
+                                <from>docker.elastic.co/elasticsearch/elasticsearch:5.0.2</from>
                                 <assembly>
                                     <descriptor>plugin.xml</descriptor>
-                                    <targetDir>/usr/share/elasticsearch/plugins/elasticsearch-shield-kerberos-realm
+                                    <targetDir>/usr/share/elasticsearch/plugins/x-pack/extensions/xpack-kerberos-realm
                                     </targetDir>
                                 </assembly>
-                                <runCmds>
-                                    <run>bin/plugin install --batch license</run>
-                                    <run>bin/plugin install --batch shield</run>
-                                </runCmds>
                                 <optimise>false</optimise>
                             </build>
                             <run>
@@ -191,7 +206,10 @@
                                             ${project.basedir}/src/test/resources/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
                                         </volume>
                                         <volume>
-                                            ${project.basedir}/src/test/resources/kerberos:/usr/share/elasticsearch/config/kerberos
+                                            ${project.basedir}/src/test/resources/krb5.conf:/usr/share/elasticsearch/config/kerberos/krb5.conf
+                                        </volume>
+                                        <volume>
+                                            ${project.basedir}/src/test/resources/krb5.keytab:/usr/share/elasticsearch/config/kerberos/krb5.keytab
                                         </volume>
                                         <volume>
                                             ${project.basedir}/jacocoagent.jar:/jacocoagent.jar
@@ -207,8 +225,7 @@
                                     <kill>5000</kill>
                                 </wait>
                                 <env>
-                                    <ES_JAVA_OPTS>-javaagent:/jacocoagent.jar=destfile=/tmp/jacoco-it.exec
-                                    </ES_JAVA_OPTS>
+                                    <ES_JAVA_OPTS>-javaagent:/jacocoagent.jar=destfile=/tmp/jacoco-it.exec</ES_JAVA_OPTS>
                                 </env>
                             </run>
                         </image>

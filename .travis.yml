@@ -1,10 +1,11 @@
 language: java
 sudo: required
+before_script:
+  - sudo sysctl -w vm.max_map_count=262144
 
 install: true
 
 jdk:
-  - oraclejdk7
   - oraclejdk8
 
 script: mvn clean verify -Ddocker.showLogs -B

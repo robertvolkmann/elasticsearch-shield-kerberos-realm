@@ -18,23 +18,21 @@
  */
 package de.codecentric.elasticsearch.plugin.kerberosrealm.realm;
 
-import com.google.common.collect.Iterators;
 import de.codecentric.elasticsearch.plugin.kerberosrealm.realm.KerberosToken.KerberosTokenFactory;
-import org.elasticsearch.action.admin.cluster.node.liveness.LivenessRequest;
-import org.elasticsearch.rest.RestRequest;
-import org.elasticsearch.shield.InternalSystemUser;
-import org.elasticsearch.shield.User;
-import org.elasticsearch.shield.authc.AuthenticationToken;
-import org.elasticsearch.shield.authc.Realm;
-import org.elasticsearch.shield.authc.RealmConfig;
-import org.elasticsearch.transport.TransportMessage;
+import org.elasticsearch.common.util.concurrent.ThreadContext;
+import org.elasticsearch.xpack.security.authc.AuthenticationToken;
+import org.elasticsearch.xpack.security.authc.Realm;
+import org.elasticsearch.xpack.security.authc.RealmConfig;
+import org.elasticsearch.xpack.security.user.User;
 
 import java.util.Arrays;
 
-public class KerberosRealm extends Realm<KerberosToken> {
+public class KerberosRealm extends Realm {
 
+    public static final String WWW_AUTHENTICATE_HEADER = "WWW-Authenticate";
+    public static final String AUTHORIZATION_HEADER = "Authorization";
     public static final String TYPE = "kerberos";
-    private static final String HTTP_AUTHORIZATION = "Authorization";
+
     private final RolesProvider rolesProvider;
     private final KerberosAuthenticator kerberosAuthenticator;
 
@@ -50,43 +48,16 @@ public class KerberosRealm extends Realm<KerberosToken> {
     }
 
     @Override
-    public KerberosToken token(RestRequest request) {
-        if (logger.isDebugEnabled()) {
-            logger.debug("Rest request headers: {}", Iterators.toString(request.headers().iterator()));
-        }
-        String authorizationHeader = request.header(HTTP_AUTHORIZATION);
-        KerberosToken token = new KerberosTokenFactory().extractToken(authorizationHeader);
-        if (token != null && logger.isDebugEnabled()) {
-            logger.debug("Rest request token '{}' for {} successully generated", token, request.path());
-        }
-        return token;
+    public KerberosToken token(ThreadContext threadContext) {
+        String authorizationHeader = threadContext.getHeader(AUTHORIZATION_HEADER);
+        logger.debug("Authorization header: {}", authorizationHeader);
+
+        return new KerberosTokenFactory().extractToken(authorizationHeader);
     }
 
     @Override
-    public KerberosToken token(TransportMessage<?> message) {
-        if (logger.isDebugEnabled()) {
-            logger.debug("Transport request headers: {}", Iterators.toString(message.getHeaders().iterator()));
-        }
-
-        if (message instanceof LivenessRequest) {
-            return LivenessToken.INSTANCE;
-        }
-
-        String authorizationHeader = message.getHeader(HTTP_AUTHORIZATION);
-        KerberosToken token = new KerberosTokenFactory().extractToken(authorizationHeader);
-        if (token != null && logger.isDebugEnabled()) {
-            logger.debug("Transport message token '{}' for message {} successully generated", token, message.getClass());
-        }
-        return token;
-    }
-
-    @Override
-    public User authenticate(KerberosToken token) {
-        if (token instanceof LivenessToken) {
-            return InternalSystemUser.INSTANCE;
-        }
-
-        String actualUser = kerberosAuthenticator.authenticate(token);
+    public User authenticate(AuthenticationToken token) {
+        String actualUser = kerberosAuthenticator.authenticate((KerberosToken) token);
 
         if (actualUser == null) {
             logger.warn("User cannot be authenticated");

@@ -2,7 +2,7 @@ package de.codecentric.elasticsearch.plugin.kerberosrealm.realm;
 
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.env.Environment;
-import org.elasticsearch.shield.authc.RealmConfig;
+import org.elasticsearch.xpack.security.authc.RealmConfig;
 import org.junit.Test;
 
 import static org.hamcrest.Matchers.*;

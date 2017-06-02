@@ -5,8 +5,8 @@ Shield Kerberos Realm
 [![codecov](https://codecov.io/gh/robertvolkmann/elasticsearch-shield-kerberos-realm/branch/master/graph/badge.svg)](https://codecov.io/gh/robertvolkmann/elasticsearch-shield-kerberos-realm)
 [![License](http://img.shields.io/:license-apache-blue.svg)](http://www.apache.org/licenses/LICENSE-2.0.html)
 
-Kerberos/SPNEGO custom realm for Elasticsearch Shield 2.4.4.  
-Authenticate HTTP and Transport requests via Kerberos/SPNEGO.
+Kerberos/SPNEGO custom realm for Elasticsearch X-Pack 5.0.2.  
+Authenticate HTTP requests via Kerberos/SPNEGO. Transport requests are not yet supported.
 
 ### License
 Apache License Version 2.0
@@ -14,14 +14,13 @@ Apache License Version 2.0
 ### Features
 
 * Kerberos/SPNEGO REST/HTTP authentication
-* Kerberos/SPNEGO Transport authentication
 * No JAAS login.conf required
 * No external dependencies
 
 ### Prerequisites
 
-* Elasticsearch 2.4.4
-* Shield Plugin 2.4.4
+* Elasticsearch 5.0.2
+* X-Pack Plugin 5.0.2
 * Kerberos Infrastructure (ActiveDirectory, MIT, Heimdal, ...)
 
 ### Build and install latest

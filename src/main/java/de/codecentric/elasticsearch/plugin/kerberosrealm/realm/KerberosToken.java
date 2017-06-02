@@ -18,7 +18,7 @@
 package de.codecentric.elasticsearch.plugin.kerberosrealm.realm;
 
 import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.shield.authc.AuthenticationToken;
+import org.elasticsearch.xpack.security.authc.AuthenticationToken;
 
 import javax.xml.bind.DatatypeConverter;
 import java.util.Locale;
