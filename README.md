@@ -6,7 +6,8 @@ Shield Kerberos Realm
 [![License](http://img.shields.io/:license-apache-blue.svg)](http://www.apache.org/licenses/LICENSE-2.0.html)
 
 Kerberos/SPNEGO custom realm for Elasticsearch X-Pack 5.0.2.  
-Authenticate HTTP requests via Kerberos/SPNEGO. Transport requests are not yet supported.
+Authenticate HTTP requests via Kerberos/SPNEGO.
+Transport requests are not yet supported.
 
 ### License
 Apache License Version 2.0
@@ -26,7 +27,7 @@ Apache License Version 2.0
 ### Build and install latest
     $ git clone https://github.com/robertvolkmann/elasticsearch-shield-kerberos-realm.git
     $ mvn package
-    $ bin/plugin install file:///path/to/target/release/elasticsearch-shield-kerberos-realm-2.4.4.zip
+    $ bin/x-pack/extension install file:///path/to/target/release/elasticsearch-shield-kerberos-realm-2.4.4.zip
 
 ### Configuration
 
@@ -39,7 +40,7 @@ Configuration is done in elasticsearch.yml
         files:
             acceptor_keytab: relative/path/to/server.keytab
             krb5_conf: relative/path/to/krb5.conf
-        roles.role.0: user@REALM.com
+        roles.user_role.0: user@REALM.com
 
 * ``acceptor_principal`` - Acceptor (Server) Principal name, must be present in acceptor_keytab file
 * ``acceptor_keytab`` - The relative path to the keytab where the acceptor_principal credentials are stored.
